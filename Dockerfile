@@ -1,4 +1,3 @@
-cat <<EOF > Dockerfile
 # Use lightweight Nginx Alpine image
 FROM nginx:alpine
 
@@ -16,4 +15,3 @@ EXPOSE 80
 
 # Start Nginx
 CMD ["nginx", "-g", "daemon off;"]
-EOF
