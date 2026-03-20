@@ -1,0 +1,14 @@
+cat <<EOF > cloudbuild.yaml
+steps:
+  # Build the container image
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['build', '-t', 'us-east1-docker.pkg.dev/upgradlabs-1749732690621/bookmyshow-repo/frontend:v1', '.']
+
+  # Push the image to Artifact Registry
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', 'us-east1-docker.pkg.dev/upgradlabs-1749732690621/bookmyshow-repo/frontend:v1']
+
+images:
+  - 'us-east1-docker.pkg.dev/upgradlabs-1749732690621/bookmyshow-repo/frontend:v1'
+EOF
+
