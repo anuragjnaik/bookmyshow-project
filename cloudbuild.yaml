@@ -1,77 +1,26 @@
 steps:
-  # Step 1: Install dependencies
-  - name: 'node:18-alpine'
-    id: 'install-deps'
-    entrypoint: 'npm'
-    args: ['ci']
-    env:
-      - 'CI=true'
-
-  # Step 2: Run unit tests
-  - name: 'node:18-alpine'
-    id: 'run-tests'
-    entrypoint: 'npm'
-    args: ['test']
-    env:
-      - 'NODE_ENV=test'
-    waitFor: ['install-deps']
-
-  # Step 3: Build Docker image
+  # Step 1: Build the Docker image using the Dockerfile in the current directory
   - name: 'gcr.io/cloud-builders/docker'
-    id: 'build-image'
-    args:
+    id: 'Build Image'
+    args: 
       - 'build'
       - '-t'
-      - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO_NAME}/${_SERVICE_NAME}:${BUILD_ID}'
-      - '-t'
-      - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO_NAME}/${_SERVICE_NAME}:latest'
+      - 'us-east1-docker.pkg.dev/upgradlabs-1749732690621/bookmyshow-repo/frontend:v1'
       - '.'
-    waitFor: ['run-tests']
 
-  # Step 4: Push image to Artifact Registry
+  # Step 2: Push the image to Artifact Registry
   - name: 'gcr.io/cloud-builders/docker'
-    id: 'push-image'
-    args:
+    id: 'Push Image'
+    args: 
       - 'push'
-      - '--all-tags'
-      - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO_NAME}/${_SERVICE_NAME}'
-    waitFor: ['build-image']
+      - 'us-east1-docker.pkg.dev/upgradlabs-1749732690621/bookmyshow-repo/frontend:v1'
 
-  # Step 5: Create Cloud Deploy release
-  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
-    id: 'create-release'
-    entrypoint: 'bash'
-    args:
-      - '-c'
-      - |
-        # Generate a unique release ID using timestamp
-        RELEASE_ID=$(date +%Y%m%d-%H%M%S)
-        RELEASE_NAME="${_SERVICE_NAME}-rel-$$RELEASE_ID"
-        echo "Creating Cloud Deploy release: $$RELEASE_NAME"
-        echo "Using image: ${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO_NAME}/${_SERVICE_NAME}:${BUILD_ID}"
-        gcloud deploy releases create "$$RELEASE_NAME" \
-          --delivery-pipeline=${_SERVICE_NAME}-pipeline \
-          --region=${_REGION} \
-          --images=${_SERVICE_NAME}=${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO_NAME}/${_SERVICE_NAME}:${BUILD_ID} \
-          --skaffold-file=skaffold.yaml
-    waitFor: ['push-image']
+# The images field automatically handles the push and shows the artifact in the build summary
+images:
+  - 'us-east1-docker.pkg.dev/upgradlabs-1749732690621/bookmyshow-repo/frontend:v1'
 
-# Substitutions (default values, can be overridden)
-substitutions:
-  _SERVICE_NAME: 'order-api'
-  _REGION: 'asia-south1'
-  _REPO_NAME: 'order-api-repo'
-
-# Build options
+# Optional: Add logging to help with troubleshooting in the Console
 options:
-  machineType: 'E2_HIGHCPU_8'
   logging: CLOUD_LOGGING_ONLY
 
-# Timeout for the entire build
-timeout: '1200s'
-
-# Images to be pushed to Artifact Registry
-images:
-  - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO_NAME}/${_SERVICE_NAME}:${BUILD_ID}'
-  - '${_REGION}-docker.pkg.dev/${PROJECT_ID}/${_REPO_NAME}/${_SERVICE_NAME}:latest'
 
